@@ -79,7 +79,7 @@ use ibc_proto::ibc::core::connection::v1::{
 };
 use ibc_proto::ibc::core::port::v1::QueryAppVersionRequest;
 
-use crate::event::monitor::{EventMonitor, EventReceiver};
+use crate::event::monitor::{queries, EventMonitor, EventReceiver};
 use crate::keyring::{KeyEntry, KeyRing};
 use crate::light_client::tendermint::LightClient as TmLightClient;
 use crate::light_client::LightClient;
@@ -992,6 +992,7 @@ impl ChainEndpoint for CosmosSdkChain {
             self.config.id.clone(),
             self.config.websocket_addr.clone(),
             rt,
+            queries::all(),
         )
         .map_err(Error::event_monitor)?;
 

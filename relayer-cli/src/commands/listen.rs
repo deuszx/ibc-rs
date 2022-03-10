@@ -1,5 +1,6 @@
 use alloc::sync::Arc;
 use core::{fmt, ops::Deref, str::FromStr};
+use ibc_relayer::event::monitor::queries;
 use std::thread;
 
 use abscissa_core::clap::Parser;
@@ -150,6 +151,7 @@ fn subscribe(
         chain_config.id.clone(),
         chain_config.websocket_addr.clone(),
         rt,
+        queries::all(),
     )
     .map_err(|e| format!("could not initialize event monitor: {}", e))?;
 

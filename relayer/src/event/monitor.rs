@@ -135,6 +135,7 @@ impl EventMonitor {
         chain_id: ChainId,
         node_addr: Url,
         rt: Arc<TokioRuntime>,
+        queries: Vec<Query>,
     ) -> Result<(Self, EventReceiver, TxMonitorCmd)> {
         let (tx_batch, rx_batch) = channel::unbounded();
         let (tx_cmd, rx_cmd) = channel::unbounded();
@@ -147,15 +148,12 @@ impl EventMonitor {
         let (tx_err, rx_err) = mpsc::unbounded_channel();
         let websocket_driver_handle = rt.spawn(run_driver(driver, tx_err.clone()));
 
-        // TODO: move them to config file(?)
-        let event_queries = queries::all();
-
         let monitor = Self {
             rt,
             chain_id,
             client,
             driver_handle: websocket_driver_handle,
-            event_queries,
+            event_queries: queries,
             tx_batch,
             rx_err,
             tx_err,
