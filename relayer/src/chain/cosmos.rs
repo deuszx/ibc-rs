@@ -985,7 +985,7 @@ impl ChainEndpoint for CosmosSdkChain {
     fn init_event_monitor(
         &self,
         rt: Arc<TokioRuntime>,
-    ) -> Result<(EventReceiver, TxMonitorCmd), Error> {
+    ) -> Result<(EventReceiver<IbcEvent>, TxMonitorCmd), Error> {
         crate::time!("init_event_monitor");
 
         let (mut event_monitor, event_receiver, monitor_tx) = EventMonitor::new(

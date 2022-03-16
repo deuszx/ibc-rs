@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use alloc::collections::btree_map::BTreeMap as HashMap;
+use core::cmp::Ordering;
 use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::str::FromStr;
@@ -241,6 +242,21 @@ pub enum IbcEvent {
 impl Default for IbcEvent {
     fn default() -> Self {
         Self::Empty("".to_string())
+    }
+}
+
+impl PartialOrd for IbcEvent {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for IbcEvent {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (IbcEvent::NewBlock(_), _) => Ordering::Less,
+            _ => Ordering::Equal,
+        }
     }
 }
 

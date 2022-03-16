@@ -1,4 +1,4 @@
-use ibc::{core::ics02_client::events::NewBlock, Height};
+use ibc::{core::ics02_client::events::NewBlock, events::IbcEvent, Height};
 
 use crate::event::monitor::EventBatch;
 
@@ -6,7 +6,7 @@ use crate::event::monitor::EventBatch;
 #[derive(Debug, Clone)]
 pub enum WorkerCmd {
     /// A batch of packet events need to be relayed
-    IbcEvents { batch: EventBatch },
+    IbcEvents { batch: EventBatch<IbcEvent> },
 
     /// A new block has been committed
     NewBlock { height: Height, new_block: NewBlock },

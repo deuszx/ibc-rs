@@ -108,7 +108,7 @@ pub trait ChainEndpoint: Sized {
     fn init_event_monitor(
         &self,
         rt: Arc<TokioRuntime>,
-    ) -> Result<(EventReceiver, TxMonitorCmd), Error>;
+    ) -> Result<(EventReceiver<IbcEvent>, TxMonitorCmd), Error>;
 
     /// Returns the chain's identifier
     fn id(&self) -> &ChainId;

@@ -85,7 +85,7 @@ impl<ChainA: ChainHandle, ChainB: ChainHandle> Debug for ChainHandlePair<ChainA,
     }
 }
 
-pub type Subscription = channel::Receiver<Arc<MonitorResult<EventBatch>>>;
+pub type Subscription = channel::Receiver<Arc<MonitorResult<EventBatch<IbcEvent>>>>;
 
 pub type ReplyTo<T> = channel::Sender<Result<T, Error>>;
 pub type Reply<T> = channel::Receiver<Result<T, Error>>;

@@ -1,5 +1,4 @@
 use alloc::sync::Arc;
-use core::cmp::Ordering;
 
 use crossbeam_channel as channel;
 use futures::{
@@ -17,7 +16,7 @@ use tendermint_rpc::{
 };
 
 use ibc::{
-    core::ics02_client::height::Height, core::ics24_host::identifier::ChainId, events::IbcEvent,
+    core::ics02_client::height::Height, core::ics24_host::identifier::ChainId,
 };
 
 use crate::util::{
@@ -47,17 +46,16 @@ mod retry_strategy {
 
 /// A batch of events from a chain at a specific height
 #[derive(Clone, Debug)]
-pub struct EventBatch {
+pub struct EventBatch<T> {
     pub chain_id: ChainId,
     pub height: Height,
-    pub events: Vec<IbcEvent>,
+    pub events: Vec<T>,
 }
 
 type SubscriptionResult = core::result::Result<RpcEvent, RpcError>;
 type SubscriptionStream = dyn Stream<Item = SubscriptionResult> + Send + Sync + Unpin;
-
-pub type EventSender = channel::Sender<Result<EventBatch>>;
-pub type EventReceiver = channel::Receiver<Result<EventBatch>>;
+pub type EventSender<T> = channel::Sender<Result<EventBatch<T>>>;
+pub type EventReceiver<T> = channel::Receiver<Result<EventBatch<T>>>;
 pub type TxMonitorCmd = channel::Sender<MonitorCmd>;
 
 #[derive(Debug)]
@@ -72,14 +70,14 @@ pub enum MonitorCmd {
 /// The default events that are queried are:
 /// - [`EventType::NewBlock`](tendermint_rpc::query::EventType::NewBlock)
 /// - [`EventType::Tx`](tendermint_rpc::query::EventType::Tx)
-pub struct EventMonitor {
+pub struct EventMonitor<T> {
     chain_id: ChainId,
     /// WebSocket to collect events from
     client: WebSocketClient,
     /// Async task handle for the WebSocket client's driver
     driver_handle: JoinHandle<()>,
     /// Channel to handler where the monitor for this chain sends the events
-    tx_batch: channel::Sender<Result<EventBatch>>,
+    tx_batch: channel::Sender<Result<EventBatch<T>>>,
     /// Channel where to receive client driver errors
     rx_err: mpsc::UnboundedReceiver<tendermint_rpc::Error>,
     /// Channel where to send client driver errors
@@ -129,14 +127,14 @@ pub mod queries {
     }
 }
 
-impl EventMonitor {
+impl<T: Batchable + Ord> EventMonitor<T> {
     /// Create an event monitor, and connect to a node
     pub fn new(
         chain_id: ChainId,
         node_addr: Url,
         rt: Arc<TokioRuntime>,
         queries: Vec<Query>,
-    ) -> Result<(Self, EventReceiver, TxMonitorCmd)> {
+    ) -> Result<(Self, EventReceiver<T>, TxMonitorCmd)> {
         let (tx_batch, rx_batch) = channel::unbounded();
         let (tx_cmd, rx_cmd) = channel::unbounded();
 
@@ -397,7 +395,7 @@ impl EventMonitor {
     }
 
     /// Collect the IBC events from the subscriptions
-    fn process_batch(&self, batch: EventBatch) -> Result<()> {
+    fn process_batch(&self, batch: EventBatch<T>) -> Result<()> {
         self.tx_batch
             .send(Ok(batch))
             .map_err(|_| Error::channel_send_failed())?;
@@ -406,20 +404,30 @@ impl EventMonitor {
     }
 }
 
+pub trait Batchable
+where
+    Self: Sized,
+{
+    fn process(
+        chain_id: &ChainId,
+        event: RpcEvent,
+    ) -> std::result::Result<Vec<(Height, Self)>, String>;
+}
+
 /// Collect the IBC events from an RPC event
-fn collect_events(
+fn collect_events<T: Batchable>(
     chain_id: &ChainId,
     event: RpcEvent,
-) -> impl Stream<Item = Result<(Height, IbcEvent)>> {
-    let events = crate::event::rpc::get_all_events(chain_id, event).unwrap_or_default();
+) -> impl Stream<Item = Result<(Height, T)>> {
+    let events = T::process(chain_id, event).unwrap_or_default(); // crate::event::rpc::get_all_events(chain_id, event).unwrap_or_default();
     stream::iter(events).map(Ok)
 }
 
 /// Convert a stream of RPC event into a stream of event batches
-fn stream_batches(
+fn stream_batches<T: Batchable + Ord>(
     subscriptions: Box<SubscriptionStream>,
     chain_id: ChainId,
-) -> impl Stream<Item = Result<EventBatch>> {
+) -> impl Stream<Item = Result<EventBatch<T>>> {
     let id = chain_id.clone();
 
     // Collect IBC events from each RPC event
@@ -452,11 +460,12 @@ fn stream_batches(
 
 /// Sort the given events by putting the NewBlock event first,
 /// and leaving the other events as is.
-fn sort_events(events: &mut Vec<IbcEvent>) {
-    events.sort_by(|a, b| match (a, b) {
-        (IbcEvent::NewBlock(_), _) => Ordering::Less,
-        _ => Ordering::Equal,
-    })
+fn sort_events<T: Ord>(events: &mut Vec<T>) {
+    events.sort();
+    //  sort_by(|a, b| match (a, b) {
+    //     (IbcEvent::NewBlock(_), _) => Ordering::Less,
+    //     _ => Ordering::Equal,
+    // })
 }
 
 async fn run_driver(

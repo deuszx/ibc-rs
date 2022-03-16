@@ -73,11 +73,11 @@ pub struct Threads {
 pub enum EventMonitorCtrl {
     None {
         /// Empty channel for when the None case
-        never: EventReceiver,
+        never: EventReceiver<IbcEvent>,
     },
     Live {
         /// Receiver channel from the event bus
-        event_receiver: EventReceiver,
+        event_receiver: EventReceiver<IbcEvent>,
 
         /// Sender channel to terminate the event monitor
         tx_monitor_cmd: TxMonitorCmd,
@@ -91,18 +91,18 @@ impl EventMonitorCtrl {
         }
     }
 
-    pub fn live(event_receiver: EventReceiver, tx_monitor_cmd: TxMonitorCmd) -> Self {
+    pub fn live(event_receiver: EventReceiver<IbcEvent>, tx_monitor_cmd: TxMonitorCmd) -> Self {
         Self::Live {
             event_receiver,
             tx_monitor_cmd,
         }
     }
 
-    pub fn enable(&mut self, event_receiver: EventReceiver, tx_monitor_cmd: TxMonitorCmd) {
+    pub fn enable(&mut self, event_receiver: EventReceiver<IbcEvent>, tx_monitor_cmd: TxMonitorCmd) {
         *self = Self::live(event_receiver, tx_monitor_cmd);
     }
 
-    pub fn recv(&self) -> &EventReceiver {
+    pub fn recv(&self) -> &EventReceiver<IbcEvent> {
         match self {
             Self::None { ref never } => never,
             Self::Live {
@@ -140,7 +140,7 @@ pub struct ChainRuntime<Endpoint: ChainEndpoint> {
     request_receiver: channel::Receiver<ChainRequest>,
 
     /// An event bus, for broadcasting events that this runtime receives (via `event_receiver`) to subscribers
-    event_bus: EventBus<Arc<MonitorResult<EventBatch>>>,
+    event_bus: EventBus<Arc<MonitorResult<EventBatch<IbcEvent>>>>,
 
     /// Interface to the event monitor
     event_monitor_ctrl: EventMonitorCtrl,

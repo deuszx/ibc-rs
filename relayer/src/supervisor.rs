@@ -51,7 +51,7 @@ use cmd::{CmdEffect, ConfigUpdate, SupervisorCmd};
 
 use self::{scan::ChainScanner, spawn::SpawnContext};
 
-type ArcBatch = Arc<event::monitor::Result<EventBatch>>;
+type ArcBatch = Arc<event::monitor::Result<EventBatch<IbcEvent>>>;
 type Subscription = Receiver<ArcBatch>;
 
 /**
@@ -386,7 +386,7 @@ fn collect_events(
     config: &Config,
     workers: &WorkerMap,
     src_chain: &impl ChainHandle,
-    batch: &EventBatch,
+    batch: &EventBatch<IbcEvent>,
 ) -> CollectedEvents {
     let mut collected = CollectedEvents::new(batch.height, batch.chain_id.clone());
 
@@ -620,7 +620,7 @@ fn process_batch<Chain: ChainHandle>(
     client_state_filter: &mut FilterPolicy,
     workers: &mut WorkerMap,
     src_chain: Chain,
-    batch: &EventBatch,
+    batch: &EventBatch<IbcEvent>,
 ) -> Result<(), Error> {
     assert_eq!(src_chain.id(), batch.chain_id);
 

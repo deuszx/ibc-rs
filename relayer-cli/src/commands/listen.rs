@@ -146,7 +146,7 @@ fn event_match(event: &IbcEvent, filters: &[EventFilter]) -> bool {
 fn subscribe(
     chain_config: &ChainConfig,
     rt: Arc<TokioRuntime>,
-) -> Result<(EventMonitor, EventReceiver), Box<dyn std::error::Error>> {
+) -> Result<(EventMonitor<IbcEvent>, EventReceiver<IbcEvent>), Box<dyn std::error::Error>> {
     let (mut event_monitor, rx, _) = EventMonitor::new(
         chain_config.id.clone(),
         chain_config.websocket_addr.clone(),

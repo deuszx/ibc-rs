@@ -60,8 +60,8 @@ pub struct MockChain {
     context: MockContext,
 
     // keep a reference to event sender to prevent it from being dropped
-    _event_sender: EventSender,
-    event_receiver: EventReceiver,
+    _event_sender: EventSender<IbcEvent>,
+    event_receiver: EventReceiver<IbcEvent>,
 }
 
 impl MockChain {
@@ -101,7 +101,7 @@ impl ChainEndpoint for MockChain {
     fn init_event_monitor(
         &self,
         _rt: Arc<Runtime>,
-    ) -> Result<(EventReceiver, TxMonitorCmd), Error> {
+    ) -> Result<(EventReceiver<IbcEvent>, TxMonitorCmd), Error> {
         let (tx, _) = crossbeam_channel::unbounded();
         Ok((self.event_receiver.clone(), tx))
     }
