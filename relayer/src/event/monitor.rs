@@ -417,7 +417,7 @@ fn collect_events<T: Batchable>(
     chain_id: &ChainId,
     event: RpcEvent,
 ) -> impl Stream<Item = Result<(Height, T)>> {
-    let events = T::process(chain_id, event).unwrap_or_default(); // crate::event::rpc::get_all_events(chain_id, event).unwrap_or_default();
+    let events = T::process(chain_id, event).unwrap_or_default();
     stream::iter(events).map(Ok)
 }
 
