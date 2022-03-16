@@ -317,7 +317,7 @@ impl<ChainA: ChainHandle, ChainB: ChainHandle> RelayPath<ChainA, ChainB> {
     }
 
     /// Generate & schedule operational data from the input `batch` of IBC events.
-    pub fn update_schedule(&self, batch: EventBatch) -> Result<(), LinkError> {
+    pub fn update_schedule(&self, batch: EventBatch<IbcEvent>) -> Result<(), LinkError> {
         // Collect relevant events from the incoming batch & adjust their height.
         let events = self.filter_relaying_events(batch.events);
 

@@ -1,5 +1,6 @@
 use alloc::sync::Arc;
 use core::{fmt, ops::Deref, str::FromStr};
+use ibc_relayer::event::monitor::queries;
 use std::thread;
 
 use abscissa_core::clap::Parser;
@@ -145,11 +146,12 @@ fn event_match(event: &IbcEvent, filters: &[EventFilter]) -> bool {
 fn subscribe(
     chain_config: &ChainConfig,
     rt: Arc<TokioRuntime>,
-) -> Result<(EventMonitor, EventReceiver), Box<dyn std::error::Error>> {
+) -> Result<(EventMonitor<IbcEvent>, EventReceiver<IbcEvent>), Box<dyn std::error::Error>> {
     let (mut event_monitor, rx, _) = EventMonitor::new(
         chain_config.id.clone(),
         chain_config.websocket_addr.clone(),
         rt,
+        queries::all(),
     )
     .map_err(|e| format!("could not initialize event monitor: {}", e))?;
 

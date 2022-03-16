@@ -11,6 +11,8 @@ use ibc::events::{IbcEvent, RawObject};
 
 use crate::event::monitor::queries;
 
+use super::monitor::Batchable;
+
 /// Extract IBC events from Tendermint RPC events
 ///
 /// Events originate from the following ABCI methods ->
@@ -252,4 +254,10 @@ fn extract_block_events(
         height,
     );
     events
+}
+
+impl Batchable for IbcEvent {
+    fn process(chain_id: &ChainId, event: RpcEvent) -> Result<Vec<(Height, Self)>, String> {
+        get_all_events(chain_id, event)
+    }
 }

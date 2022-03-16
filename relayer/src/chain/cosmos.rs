@@ -85,7 +85,7 @@ use crate::chain::{QueryResponse, StatusResponse};
 use crate::config::types::Memo;
 use crate::config::{AddressType, ChainConfig, GasPrice};
 use crate::error::Error;
-use crate::event::monitor::{EventMonitor, EventReceiver, TxMonitorCmd};
+use crate::event::monitor::{queries, EventMonitor, EventReceiver, TxMonitorCmd};
 use crate::keyring::{KeyEntry, KeyRing};
 use crate::light_client::tendermint::LightClient as TmLightClient;
 use crate::light_client::{LightClient, Verified};
@@ -1004,13 +1004,14 @@ impl ChainEndpoint for CosmosSdkChain {
     fn init_event_monitor(
         &self,
         rt: Arc<TokioRuntime>,
-    ) -> Result<(EventReceiver, TxMonitorCmd), Error> {
+    ) -> Result<(EventReceiver<IbcEvent>, TxMonitorCmd), Error> {
         crate::time!("init_event_monitor");
 
         let (mut event_monitor, event_receiver, monitor_tx) = EventMonitor::new(
             self.config.id.clone(),
             self.config.websocket_addr.clone(),
             rt,
+            queries::all(),
         )
         .map_err(Error::event_monitor)?;
 
