@@ -98,7 +98,11 @@ impl EventMonitorCtrl {
         }
     }
 
-    pub fn enable(&mut self, event_receiver: EventReceiver<IbcEvent>, tx_monitor_cmd: TxMonitorCmd) {
+    pub fn enable(
+        &mut self,
+        event_receiver: EventReceiver<IbcEvent>,
+        tx_monitor_cmd: TxMonitorCmd,
+    ) {
         *self = Self::live(event_receiver, tx_monitor_cmd);
     }
 

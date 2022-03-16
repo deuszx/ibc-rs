@@ -15,9 +15,7 @@ use tendermint_rpc::{
     WebSocketClient, WebSocketClientDriver,
 };
 
-use ibc::{
-    core::ics02_client::height::Height, core::ics24_host::identifier::ChainId,
-};
+use ibc::{core::ics02_client::height::Height, core::ics24_host::identifier::ChainId};
 
 use crate::util::{
     retry::{retry_count, retry_with_index, RetryResult},
@@ -461,11 +459,7 @@ fn stream_batches<T: Batchable + Ord>(
 /// Sort the given events by putting the NewBlock event first,
 /// and leaving the other events as is.
 fn sort_events<T: Ord>(events: &mut Vec<T>) {
-    events.sort();
-    //  sort_by(|a, b| match (a, b) {
-    //     (IbcEvent::NewBlock(_), _) => Ordering::Less,
-    //     _ => Ordering::Equal,
-    // })
+    events.sort()
 }
 
 async fn run_driver(
