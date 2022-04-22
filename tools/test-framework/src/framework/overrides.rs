@@ -4,18 +4,23 @@
 
 use core::time::Duration;
 use ibc::core::ics04_channel::channel::Order;
+use ibc::core::ics04_channel::Version;
 use ibc::core::ics24_host::identifier::PortId;
 use ibc_relayer::config::default::connection_delay as default_connection_delay;
 use ibc_relayer::config::Config;
+use ibc_relayer::foreign_client::CreateOptions as ClientOptions;
 
 use crate::error::Error;
 use crate::framework::base::HasOverrides;
 use crate::framework::base::TestConfigOverride;
-use crate::framework::binary::chain::RelayerConfigOverride;
-use crate::framework::binary::channel::{ChannelOrderOverride, PortsOverride};
+use crate::framework::binary::chain::{ClientOptionsOverride, RelayerConfigOverride};
+use crate::framework::binary::channel::{
+    ChannelOrderOverride, ChannelVersionOverride, PortsOverride,
+};
 use crate::framework::binary::connection::ConnectionDelayOverride;
-use crate::framework::binary::node::NodeConfigOverride;
+use crate::framework::binary::node::{NodeConfigOverride, NodeGenesisOverride};
 use crate::framework::nary::channel::PortsOverride as NaryPortsOverride;
+use crate::framework::supervisor::SupervisorOverride;
 use crate::types::config::TestConfig;
 
 /**
@@ -52,6 +57,18 @@ pub trait TestOverrides {
     }
 
     /**
+        Modify the genesis file before the chain gets initialized.
+
+        The config is in the dynamic-typed [`serde_json::Value`] format, as we do not
+        want to model the full format of the genesis file in Rust.
+
+        Implemented for [`NodeGenesisOverride`].
+    */
+    fn modify_genesis_file(&self, _genesis: &mut serde_json::Value) -> Result<(), Error> {
+        Ok(())
+    }
+
+    /**
        Modify the relayer config before initializing the relayer. Does no
        modification by default.
 
@@ -59,6 +76,24 @@ pub trait TestOverrides {
     */
     fn modify_relayer_config(&self, _config: &mut Config) {
         // No modification by default
+    }
+
+    /// Returns the settings for the foreign client on the first chain for the
+    /// second chain. The defaults are for a client connecting two Cosmos chains
+    /// with no custom settings.
+    fn client_options_a_to_b(&self) -> ClientOptions {
+        Default::default()
+    }
+
+    /// Returns the settings for the foreign client on the second chain for the
+    /// first chain. The defaults are for a client connecting two Cosmos chains
+    /// with no custom settings.
+    fn client_options_b_to_a(&self) -> ClientOptions {
+        Default::default()
+    }
+
+    fn should_spawn_supervisor(&self) -> bool {
+        true
     }
 
     /**
@@ -100,6 +135,16 @@ pub trait TestOverrides {
     fn channel_order(&self) -> Order {
         Order::Unordered
     }
+
+    /**
+       Return the channel version used for creating channels as [`Version`].
+       Defaults to [`Version::ics20()`].
+
+       Implemented for [`ChannelVersionOverride`].
+    */
+    fn channel_version(&self) -> Version {
+        Version::ics20()
+    }
 }
 
 impl<Test: TestOverrides> HasOverrides for Test {
@@ -122,9 +167,31 @@ impl<Test: TestOverrides> NodeConfigOverride for Test {
     }
 }
 
+impl<Test: TestOverrides> NodeGenesisOverride for Test {
+    fn modify_genesis_file(&self, genesis: &mut serde_json::Value) -> Result<(), Error> {
+        TestOverrides::modify_genesis_file(self, genesis)
+    }
+}
+
 impl<Test: TestOverrides> RelayerConfigOverride for Test {
     fn modify_relayer_config(&self, config: &mut Config) {
         TestOverrides::modify_relayer_config(self, config)
+    }
+}
+
+impl<Test: TestOverrides> ClientOptionsOverride for Test {
+    fn client_options_a_to_b(&self) -> ClientOptions {
+        TestOverrides::client_options_a_to_b(self)
+    }
+
+    fn client_options_b_to_a(&self) -> ClientOptions {
+        TestOverrides::client_options_b_to_a(self)
+    }
+}
+
+impl<Test: TestOverrides> SupervisorOverride for Test {
+    fn should_spawn_supervisor(&self) -> bool {
+        TestOverrides::should_spawn_supervisor(self)
     }
 }
 
@@ -147,6 +214,12 @@ impl<Test: TestOverrides> PortsOverride for Test {
 impl<Test: TestOverrides> ChannelOrderOverride for Test {
     fn channel_order(&self) -> Order {
         TestOverrides::channel_order(self)
+    }
+}
+
+impl<Test: TestOverrides> ChannelVersionOverride for Test {
+    fn channel_version(&self) -> Version {
+        TestOverrides::channel_version(self)
     }
 }
 

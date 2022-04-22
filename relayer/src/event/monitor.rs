@@ -445,7 +445,7 @@ fn stream_batches<T: Batchable + Ord>(
             .copied()
             .expect("internal error: found empty group"); // SAFETY: upheld by `group_while`
 
-        let mut events = events.into_iter().map(|(_, e)| e).collect();
+        let mut events = events.into_iter().map(|(_, e)| e).collect::<Vec<_>>();
         sort_events(&mut events);
 
         EventBatch {

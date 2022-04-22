@@ -1,4 +1,4 @@
-use prost_types::Any;
+use ibc_proto::google::protobuf::Any;
 
 /// A wrapper over a vector of proto-encoded messages
 /// (`Vec<Any>`), which has an associated tracking
@@ -9,8 +9,8 @@ use prost_types::Any;
 /// by sharing the same `tracking_id`.
 #[derive(Debug, Clone)]
 pub struct TrackedMsgs {
-    msgs: Vec<Any>,
-    tracking_id: String,
+    pub msgs: Vec<Any>,
+    pub tracking_id: String,
 }
 
 impl TrackedMsgs {
